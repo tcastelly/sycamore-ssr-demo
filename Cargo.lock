@@ -1285,9 +1285,9 @@ checksum = "6bdef32e8150c2a081110b42772ffe7d7c9032b606bc226c8260fd97e0976601"
 
 [[package]]
 name = "sycamore"
-version = "0.8.0"
+version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3e4decd3fabbb4cfa8ef4d8b4469c7d35d65555806f6c6642a2733d892472ffa"
+checksum = "46a7d42f5f04604dfee0076676ec1763d26eeb7c6704139913bee6651fe0cbe1"
 dependencies = [
  "ahash",
  "futures",
@@ -1342,9 +1342,9 @@ dependencies = [
 
 [[package]]
 name = "sycamore-reactive"
-version = "0.8.0"
+version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9d90be25ffda8bfc0dabd7de1e174a784baf8c84fd907feaacb5227a17a2b581"
+checksum = "6376b578ad32f5f3ab6943bccec906fb0e1f0258a8bedf811afdec8c3330ef80"
 dependencies = [
  "ahash",
  "bumpalo",
