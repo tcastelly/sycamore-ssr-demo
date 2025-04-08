@@ -6,7 +6,6 @@ use rocket::fs::Options;
 use rocket::http::uri::fmt::Path;
 use rocket::http::uri::Segments;
 use rocket::{fs::FileServer, get, launch, response, routes, tokio::fs};
-use sycamore::prelude::*;
 
 #[get("/<path..>", rank = 2)]
 async fn index(path: Segments<'_, Path>) -> io::Result<response::content::RawHtml<String>> {
@@ -19,11 +18,7 @@ async fn index(path: Segments<'_, Path>) -> io::Result<response::content::RawHtm
         pathname += "/";
     }
 
-    let rendered = sycamore::render_to_string(|cx| {
-        view! { cx,
-            app::App(Some(pathname))
-        }
-    });
+    let rendered = sycamore::render_to_string(|| app::App(Some(pathname)));
 
     let index_html = index_html.replace("%sycamore.body", &rendered);
 

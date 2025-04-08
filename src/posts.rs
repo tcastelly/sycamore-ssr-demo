@@ -4,6 +4,7 @@ use rocket::tokio::{fs::File, io::AsyncReadExt};
 
 #[get("/posts")]
 pub async fn posts() -> File {
+    println!("GET JSON list");
     File::open("posts/index.json")
         .await
         .expect("cannot read posts/index.json")
@@ -11,6 +12,7 @@ pub async fn posts() -> File {
 
 #[get("/posts/<path>")]
 pub async fn get_post(path: &str) -> Option<String> {
+    println!("GET {}", path);
     let filename = format!("posts/{}.md", path);
 
     let mut file = File::open(&filename).await.ok()?;

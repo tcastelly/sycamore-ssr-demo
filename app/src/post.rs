@@ -1,92 +1,108 @@
-use std::any::TypeId;
-
 use reqwasm::http::Request;
 use serde::{Deserialize, Serialize};
-use sycamore::{prelude::*, futures::spawn_local_scoped};
-use wasm_bindgen::JsCast;
-use web_sys::Element;
+use std::{thread, time};
+use sycamore::rt::Suspense;
+use sycamore::{futures::spawn_local_scoped, prelude::*};
 
-#[component]
-pub fn PostList<G: Html>(cx: Scope) -> View<G> {
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct PostData {
+    title: String,
+    path: String,
+}
 
-    if TypeId::of::<G>() == TypeId::of::<HydrateNode>() {
-        #[derive(Debug, Clone, Serialize, Deserialize)]
-        struct PostData {
-            title: String,
-            path: String,
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct PostList {
+    posts: Vec<PostData>,
+}
+
+async fn getPostList() -> Option<PostList> {
+    let resp = Request::get(&format!("/posts")).send().await.unwrap();
+
+    println!("response status: {:?}", resp.status());
+
+    Some(resp.json().await.expect("cannot parse post list"))
+}
+
+async fn getPost(path: String) -> Option<String> {
+    let resp = Request::get(&format!("/posts/{}", path))
+        .send()
+        .await
+        .unwrap();
+
+    Some(resp.text().await.expect("cannot parse post text"))
+}
+
+#[component(inline_props)]
+async fn DisplayPost(path: String) -> View {
+    let html = create_signal(String::new());
+    let mut post = "".to_string();
+
+    is_ssr! {
+       post = getPost(path.clone()).await.unwrap();
+    }
+
+    html.set(post);
+
+    let container_ref = create_node_ref();
+
+    create_effect(move || {
+        if let Some(dom_node) = container_ref.try_get() {
+            dom_node.set_text_content(Some(html.get_clone().as_str()));
         }
-        #[derive(Debug, Serialize, Deserialize)]
-        struct PostList {
-            posts: Vec<PostData>,
-        }
-        let post_list = create_signal(cx, None::<PostList>);
+    });
 
-        spawn_local_scoped(cx, async move {
-            let resp = Request::get(&format!("/posts")).send().await.unwrap();
-            post_list.set(Some(resp.json().await.expect("cannot parse post list")))
-        });
+    view! {
+        div(class="container", ref=container_ref)
+    }
+}
 
-        create_effect_scoped(cx, move |_| {
-            log::info!("{:?}", post_list);
-        });
+#[component()]
+async fn DisplayPostList() -> View {
+    let post_list = create_signal(None::<PostList>);
 
-        view! { cx,
-            (if let Some(post_list) = post_list.get().as_ref() {
-                let templates = post_list.posts.iter().cloned().map(|post| {
-                    let PostData { title, path } = post;
-                    view! { cx,
-                        li {
-                            a(href=format!("/blog/{}", path)) { (title) }
-                        }
-                    }
-                }).collect();
-                let templates = View::new_fragment(templates);
-                view! { cx,
-                    ul {
-                        (templates)
-                    }
-                }
-            }
-            else {
-                view! { cx,
-                    "Loading..."
+    is_ssr! {
+      post_list.set(getPostList().await);
+    }
+
+    if let Some(post_list) = post_list.get_clone() {
+        let templates: Vec<_> = post_list
+            .posts
+            .iter()
+            .cloned()
+            .map(|post| {
+                let PostData { title, path } = post;
+                view! {
+                  li {
+                    a(href=format!("/blog/{}", path)) { (title) }
+                  }
                 }
             })
+            .collect();
+
+        view! {
+          ul {
+            (templates)
+          }
         }
     } else {
-        view! { cx,
-            "Loading..."
-        }
+        view! { "Loading ..." }
     }
 }
 
 #[component]
-pub fn Post<G: Html>(cx: Scope, path: String) -> View<G> {
-    if G::IS_BROWSER {
-        let html = create_signal(cx, String::new());
+pub fn PostList() -> View {
+    view! {
+      Suspense(fallback=|| view! { p { "Loading..." } }) {
+        DisplayPostList()
+      }
+    }
+}
 
-        let container_ref = create_node_ref(cx);
-
-        spawn_local_scoped(cx, async move {
-            let resp = Request::get(&format!("/posts/{}", path)).send().await.unwrap();
-            html.set(resp.text().await.unwrap());
-
-            create_effect_scoped(cx, |_| {
-                if let Some(dom_node) = container_ref.try_get::<HydrateNode>() {
-                    dom_node
-                        .inner_element()
-                        .unchecked_into::<Element>()
-                        .set_inner_html(html.get().as_str());
-                }
-            });
-        });
-
-        view! { cx,
-            div(class="container", ref=container_ref)
-        }
-    } else {
-        view! { cx,
-            "Loading..."
-        }
+#[component]
+pub fn Post(path: String) -> View {
+    view! {
+      Suspense(fallback=|| view! { p { "Loading..." } }) {
+        DisplayPost(path=path)
+      }
     }
 }

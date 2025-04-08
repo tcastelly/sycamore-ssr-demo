@@ -8,9 +8,9 @@ version = "0.1.0"
 
 [dependencies]
 app = { path = "./app" }
-pulldown-cmark = "0.9.3"
-rocket = "0.5.0-rc.3"
-sycamore = { version = "0.8.2", features = ["ssr"] }
+pulldown-cmark = "0.13.0"
+rocket = "0.5.1"
+sycamore = { version = "0.9.1", features = ["futures", "hydrate"] }
 
 [workspace]
 members = ["app"]

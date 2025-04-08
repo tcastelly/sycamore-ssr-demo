@@ -1,8 +1,8 @@
 use sycamore::prelude::*;
 
 #[component]
-pub fn Index<G: Html>(cx: Scope) -> View<G> {
-    view! { cx,
+pub fn Index() -> View {
+    view! {
         div(class="index") {
             h1 { "Hello Sycamore!" }
             img(class="cover-img", src="/static/images/glastonburygrove.jpg")

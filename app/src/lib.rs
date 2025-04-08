@@ -16,31 +16,21 @@ pub enum AppRoutes {
     #[to("/blog")]
     PostsList,
     #[to("/blog/<path>")]
-    Post {
-        path: String
-    },
+    Post { path: String },
     #[not_found]
     NotFound,
 }
 
-fn switch<'a, G: Html>(cx: Scope<'a>, route: &'a ReadSignal<AppRoutes>) -> View<G> {
-    view! { cx,
+fn switch(route: ReadSignal<AppRoutes>) -> View {
+    view! {
         div {
             nav::Nav()
-            (match route.get().as_ref() {
-                AppRoutes::Index => view! { cx,
-                    index::Index()
-                },
-                AppRoutes::Counter => view! { cx,
-                    counter::Counter()
-                },
-                AppRoutes::PostsList => view! { cx,
-                    post::PostList()
-                },
-                AppRoutes::Post { path } => view! { cx,
-                    post::Post(path.clone())
-                },
-                AppRoutes::NotFound => view! { cx,
+            (match route.get_clone() {
+                AppRoutes::Index => index::Index(),
+                AppRoutes::Counter => counter::Counter(),
+                AppRoutes::PostsList => post::PostList(),
+                AppRoutes::Post { path } => post::Post(path),
+                AppRoutes::NotFound => view! {
                     "404 Not Found"
                 },
             })
@@ -51,18 +41,18 @@ fn switch<'a, G: Html>(cx: Scope<'a>, route: &'a ReadSignal<AppRoutes>) -> View<
 /// # Props
 /// * `pathname` - Set to `Some(_)` if running on the server.
 #[component]
-pub fn App<G: Html>(cx: Scope, pathname: Option<String>) -> View<G> {
+pub fn App(pathname: Option<String>) -> View {
     match pathname {
         Some(pathname) => {
             let route = AppRoutes::default().match_path(&pathname);
-            view! { cx,
+            view! {
                 StaticRouter(
                     view=switch,
                     route=route,
                 )
             }
         }
-        None => view! { cx,
+        None => view! {
             Router(
                 view=switch,
                 integration=HistoryIntegration::new(),
